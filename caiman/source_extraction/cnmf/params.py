@@ -10,7 +10,7 @@ from .utilities import dict_compare, get_file_size
 
 class CNMFParams(object):
 
-    def __init__(self, fnames=None, dims=None, dxy=(1, 1),
+    def __init__(self, fnames=None, dims=None, dxy=(1, 1), var_name_hdf5= None,
                  border_pix=0, del_duplicates=False, low_rank_background=True,
                  memory_fact=1, n_processes=1, nb_patch=1, p_ssub=2, p_tsub=2,
                  remove_very_bad_comps=False, rf=None, stride=None,
@@ -514,7 +514,8 @@ class CNMFParams(object):
             'dims': dims,
             'fr': fr,
             'decay_time': decay_time,
-            'dxy': dxy
+            'dxy': dxy,
+            'var_name_hdf5': var_name_hdf5
         }
 
         self.patch = {
@@ -708,7 +709,7 @@ class CNMFParams(object):
         
         self.change_params(params_dict)
         if self.data['dims'] is None and self.data['fnames'] is not None:
-            self.data['dims'] = get_file_size(self.data['fnames'])[0]
+            self.data['dims'] = get_file_size(self.data['fnames'], var_name_hdf5=self.data['var_name_hdf5'])[0]
         if self.data['fnames'] is not None:
             T = get_file_size(self.data['fnames'])[1]
             if len(self.data['fnames']) > 1:

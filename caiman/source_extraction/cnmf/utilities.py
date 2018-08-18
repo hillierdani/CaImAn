@@ -197,6 +197,7 @@ def detrend_df_f(A, b, C, f, YrA=None, quantileMin=8, frames_window=500,
         YrA = nA_mat * YrA
 
     F = C + YrA if YrA is not None else C
+    print(f'C {C.shape} YrA {YrA.shape}')
     B = A.T.dot(b).dot(f)
     T = C.shape[-1]
 
@@ -210,9 +211,7 @@ def detrend_df_f(A, b, C, f, YrA=None, quantileMin=8, frames_window=500,
             F_df = (F - Fd[:, None]) / (Df[:, None] + Fd[:, None])
         else:
             if use_fast:
-                Fd = np.stack([fast_prct_filt(f, level=prctileMin,
-                                              frames_window=frames_window) for
-                               f, prctileMin in zip(F, data_prct)])
+                Fd = np.stack([fast_prct_filt(f, level=prctileMin, frames_window=frames_window) for f, prctileMin in zip(F, data_prct)])
                 Df = np.stack([fast_prct_filt(f, level=prctileMin,
                                               frames_window=frames_window) for
                                f, prctileMin in zip(B, data_prct)])
@@ -223,6 +222,8 @@ def detrend_df_f(A, b, C, f, YrA=None, quantileMin=8, frames_window=500,
                 Df = np.stack([scipy.ndimage.percentile_filter(
                     f, prctileMin, (frames_window)) for f, prctileMin in
                     zip(B, data_prct)])
+            # Weird shape error when spatial size is large (512x512). Could not find root cause, suspected bug in how data_prct is computed.
+            print(f'F {F.shape} Fd {Fd.shape} f {f.shape} Df {Df.shape} data_prct {data_prct.shape}')
             F_df = (F - Fd) / (Df + Fd)
     else:
         if frames_window is None or frames_window > T:
