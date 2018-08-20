@@ -325,6 +325,8 @@ def run_CNMF_patches(file_name, shape, params, gnb=1, dview=None, memory_fact=1,
         if fff is not None:
 
             idx_, shapes, A, b, C, f, S, bl, c1, neurons_sn, g, sn, _, YrA = fff
+            if np.any(np.isnan(f)):
+                break
             A = A.tocsc()
 
             sn_tot[idx_] = sn
@@ -428,8 +430,11 @@ def run_CNMF_patches(file_name, shape, params, gnb=1, dview=None, memory_fact=1,
         Bm = (B_tot)
         f = np.r_[np.atleast_2d(np.mean(F_tot, axis=0)),
                   np.random.rand(gnb - 1, T)]
-
         for _ in range(100):
+            if np.any(np.isnan(F_tot)):
+                import pdb
+                pdb.set_trace()
+
             f /= np.sqrt((f**2).sum(1)[:, None])
             try:
                 b = np.fmax(Bm.dot(F_tot.dot(f.T)).dot(

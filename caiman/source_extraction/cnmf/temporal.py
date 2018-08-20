@@ -210,6 +210,8 @@ def update_temporal_components(Y, A, b, Cin, fin, bl=None, c1=None, g=None, sn=N
     S = np.zeros(np.shape(Cin))
     Cin = np.vstack((Cin, fin))
     C = Cin.copy()
+    if len(np.isnan(C).nonzero()[0]):
+        t=1
     nA = np.ravel(A.power(2).sum(axis=0))
 
     print('Generating residuals')
@@ -411,7 +413,9 @@ def update_iteration(parrllcomp, len_parrllcomp, nb, C, S, bl, nr,
 
         if dview is not None and not('multiprocessing' in str(type(dview))):
             dview.results.clear()
-
+        if len(np.isnan(C).nonzero()[0]):
+            print('NaN detected')
+            break
         if scipy.linalg.norm(Cin - C, 'fro') <= 1e-3 * scipy.linalg.norm(C, 'fro'):
             print("stopping: overall temporal component not changing significantly")
             break

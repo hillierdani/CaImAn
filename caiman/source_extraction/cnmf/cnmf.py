@@ -334,6 +334,7 @@ class CNMF(object):
             Yr, dims, T = mmapping.load_memmap(fname_new)
 
         images = np.reshape(Yr.T, [T] + list(dims), order='F')
+        self.images = images
         self.mmap_file = fname_new
         return self.fit(images, indeces=indeces)
 

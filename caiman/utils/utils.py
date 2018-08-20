@@ -462,7 +462,7 @@ def recursively_save_dict_contents_to_group(h5file, path, dic):
         if isinstance(item, (np.int64, np.float64, str, np.float, float, np.float32,int)):
             h5file[path + key] = item
             if not h5file[path + key].value == item:
-                raise ValueError('The data representation in the HDF5 file does not match the original dict.')
+                raise ValueError(f'The data representation for {key} in the HDF5 file does not match the original dict.')
         # save numpy arrays
         elif isinstance(item, np.ndarray):
             try:
@@ -470,8 +470,12 @@ def recursively_save_dict_contents_to_group(h5file, path, dic):
             except:
                 item = np.array(item).astype('|S9')
                 h5file[path + key] = item
-            if not np.array_equal(h5file[path + key].value, item):
-                raise ValueError('The data representation in the HDF5 file does not match the original dict.')
+            try:
+                isequal = np.allclose(h5file[path + key].value, item, equal_nan=True)
+            except:
+                isequal = h5file[path + key].value == item
+            if not isequal:
+                raise ValueError(f'The data representation for {key} in the HDF5 file does not match the original dict.')
         # save dictionaries
         elif isinstance(item, dict):
             recursively_save_dict_contents_to_group(h5file, path + key + '/', item)

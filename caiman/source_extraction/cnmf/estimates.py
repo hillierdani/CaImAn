@@ -401,43 +401,60 @@ class Estimates(object):
 
         return self
 
+    def save_movie(self, filename, imgs, q_max=99.75, q_min=2, gain_res=1, magnification=1, include_bck=True, frame_range=slice(None, None, None),
+                   bpx=0, nframes = 10, fps = 30, gain = 1, offset = 0):
+        self.prepare_export(imgs, q_max, q_min, gain_res, magnification, include_bck, frame_range, bpx)
+        maxmov = np.nanpercentile(self.exportable_video[0:nframes], q_max) if q_max < 100 else np.nanmax(self.exportable_video)
+        minmov = np.nanpercentile(self.exportable_video[0:nframes], q_min) if q_min > 0 else np.nanmin(self.exportable_video)
+        self.exportable_video = np.clip(self.exportable_video, minmov, maxmov)
+        import imageio
+        from visexpA.engine.dataprocessors.generic import normalize
+        normalized = normalize(self.exportable_video, np.uint8)
+        imageio.mimwrite(filename + '.mp4', normalized, fps=fps)
+
     def play_movie(self, imgs, q_max=99.75, q_min=2, gain_res=1,
                    magnification=1, include_bck=True,
                    frame_range=slice(None, None, None),
                    bpx=0):
-
         """Displays a movie with three panels (original data (left panel),
-        reconstructed data (middle panel), residual (right panel))
-        Parameters:
-        -----------
-        imgs: np.array (possibly memory mapped, t,x,y[,z])
-            Imaging data
+                reconstructed data (middle panel), residual (right panel))
+                Parameters:
+                -----------
+                imgs: np.array (possibly memory mapped, t,x,y[,z])
+                    Imaging data
 
-        q_max: float (values in [0, 100])
-            percentile for maximum plotting value
+                q_max: float (values in [0, 100])
+                    percentile for maximum plotting value
 
-        q_min: float (values in [0, 100])
-            percentile for minimum plotting value
+                q_min: float (values in [0, 100])
+                    percentile for minimum plotting value
 
-        gain_res: float
-            amplification factor for residual movie
+                gain_res: float
+                    amplification factor for residual movie
 
-        magnification: float
-            magnification factor for whole movie
+                magnification: float
+                    magnification factor for whole movie
 
-        include_bck: bool
-            flag for including background in original and reconstructed movie
+                include_bck: bool
+                    flag for including background in original and reconstructed movie
 
-        frame_rage: range or slice or list
-            display only a subset of frames
+                frame_rage: range or slice or list
+                    display only a subset of frames
 
-        bpx: int
-            number of pixels to exclude on each border
+                bpx: int
+                    number of pixels to exclude on each border
 
-        Returns:
-        --------
-        self (to stop the movie press 'q')
-        """
+                Returns:
+                --------
+                self (to stop the movie press 'q')
+                """
+        self.prepare_export(imgs, q_max, q_min, gain_res, magnification, include_bck, frame_range, bpx)
+        self.exportable_video.play(q_min=q_min, q_max=q_max, magnification=magnification)
+
+    def prepare_export(self, imgs, q_max=99.75, q_min=2, gain_res=1,
+                   magnification=1, include_bck=True,
+                   frame_range=slice(None, None, None),
+                   bpx=0):
         dims = imgs.shape[1:]
         if 'movie' not in str(type(imgs)):
             imgs = caiman.movie(imgs)
@@ -471,10 +488,9 @@ class Estimates(object):
             Y_rec = Y_rec[:, bpx:-bpx, bpx:-bpx]
             imgs = imgs[:, bpx:-bpx, bpx:-bpx]
 
-        Y_res = imgs[frame_range] - Y_rec - B
+        self.Y_res = imgs[frame_range] - Y_rec - B
 
-        caiman.concatenate((imgs[frame_range] - (not include_bck)*B, Y_rec + include_bck*B, Y_res*gain_res), axis=2).play(q_min=q_min, q_max=q_max, magnification=magnification)
-
+        self.exportable_video = caiman.concatenate((imgs[frame_range] - (not include_bck)*B, Y_rec + include_bck*B, self.Y_res*gain_res), axis=2)
         return self
 
     def compute_residuals(self, Yr):
