@@ -488,9 +488,10 @@ class Estimates(object):
             Y_rec = Y_rec[:, bpx:-bpx, bpx:-bpx]
             imgs = imgs[:, bpx:-bpx, bpx:-bpx]
 
-        self.Y_res = imgs[frame_range] - Y_rec - B
+        self.Y_res = imgs[frame_range].astype(np.uint16, copy=False) - Y_rec.astype(np.uint16, copy=False) - B.astype(np.uint16, copy=False)
 
-        self.exportable_video = caiman.concatenate((imgs[frame_range] - (not include_bck)*B, Y_rec + include_bck*B, self.Y_res*gain_res), axis=2)
+        self.exportable_video = caiman.concatenate((imgs[frame_range].astype(int) - (not include_bck)*B.astype(int),
+                                                    Y_rec.astype(int) + include_bck*B.astype(int), self.Y_res*gain_res), axis=2)
         return self
 
     def compute_residuals(self, Yr):
@@ -518,7 +519,7 @@ class Estimates(object):
         nA2_inv_mat = scipy.sparse.spdiags(
             1. / nA2, 0, nA2.shape[0], nA2.shape[0])
         Cf = np.vstack((self.C, self.f))
-        if 'numpy.ndarray' in str(type(Yr)):
+        if 'np.ndarray' in str(type(Yr)):
             YA = (Ab.T.dot(Yr)).T * nA2_inv_mat
         else:
             YA = caiman.mmapping.parallel_dot_product(Yr, Ab, dview=self.dview,

@@ -249,7 +249,7 @@ def nb_view_patches(Yr, A, C, b, f, d1, d2, YrA=None, image_neurons=None, thr=0.
     return Y_r
 
 
-def get_contours(A, dims, thr=0.9, thr_method='nrg', swap_dim=False):
+def get_contours(A, dims, thr=0.9, thr_method='nrg', swap_dim=False, return_patch=False):
     """Gets contour of spatial components and returns their coordinates
 
      Parameters:
@@ -317,24 +317,27 @@ def get_contours(A, dims, thr=0.9, thr_method='nrg', swap_dim=False):
         pars['coordinates'] = []
         # for each dimensions we draw the contour
         for B in (Bmat if len(dims) == 3 else [Bmat]):
-            vertices = find_contours(B.T, thr)
-            # this fix is necessary for having disjoint figures and borders plotted correctly
-            v = np.atleast_2d([np.nan, np.nan])
-            for _, vtx in enumerate(vertices):
-                num_close_coords = np.sum(np.isclose(vtx[0, :], vtx[-1, :]))
-                if num_close_coords < 2:
-                    if num_close_coords == 0:
-                        # case angle
-                        newpt = np.round(old_div(vtx[-1, :], [d2, d1])) * [d2, d1]
-                        vtx = np.concatenate((vtx, newpt[np.newaxis, :]), axis=0)
-                    else:
-                        # case one is border
-                        vtx = np.concatenate((vtx, vtx[0, np.newaxis]), axis=0)
-                v = np.concatenate(
-                    (v, vtx, np.atleast_2d([np.nan, np.nan])), axis=0)
-
+            if return_patch:
+                v = np.rollaxis(np.array(B.nonzero()),1,0)
+            else:
+                vertices = find_contours(B.T, thr)
+                # this fix is necessary for having disjoint figures and borders plotted correctly
+                v = np.atleast_2d([np.nan, np.nan])
+                for _, vtx in enumerate(vertices):
+                    num_close_coords = np.sum(np.isclose(vtx[0, :], vtx[-1, :]))
+                    if num_close_coords < 2:
+                        if num_close_coords == 0:
+                            # case angle
+                            newpt = np.round(old_div(vtx[-1, :], [d2, d1])) * [d2, d1]
+                            vtx = np.concatenate((vtx, newpt[np.newaxis, :]), axis=0)
+                        else:
+                            # case one is border
+                            vtx = np.concatenate((vtx, vtx[0, np.newaxis]), axis=0)
+                    v = np.concatenate(
+                        (v, vtx, np.atleast_2d([np.nan, np.nan])), axis=0)
             pars['coordinates'] = v if len(
                 dims) == 2 else (pars['coordinates'] + [v])
+
         pars['CoM'] = np.squeeze(cm[i, :])
         pars['neuron_id'] = i + 1
         coordinates.append(pars)

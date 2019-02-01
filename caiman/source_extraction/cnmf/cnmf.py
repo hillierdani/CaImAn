@@ -329,14 +329,14 @@ class CNMF(object):
                 fname_new = mmapping.save_memmap(fname_mc, base_name='memmap_', order='C',
                                                  border_to_0=b0)
             else:
-                fname_new = mmapping.save_memmap(fnames, base_name='memmap_', order='C')
+                fname_new = mmapping.save_memmap(fnames, base_name='memmap_', order='C', var_name_hdf5=self.params.data['var_name_hdf5'])
                 # now load the file
             Yr, dims, T = mmapping.load_memmap(fname_new)
 
         images = np.reshape(Yr.T, [T] + list(dims), order='F')
         self.images = images
         self.mmap_file = fname_new
-        return self.fit(images, indeces=indeces)
+        return self.fit(images)
 
     def refit(self, images, dview=None):
         """
